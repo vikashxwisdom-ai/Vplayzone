@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Vplayzone</title>
+<meta name="description" content="Vplayzone — Games, Apps, YouTube, Music and Books">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#04040d;--card:#0d0d22;--card2:#12122e;
+  --border:rgba(130,100,255,0.2);
+  --glow:#8b6eff;--glow2:#00e5ff;--gold:#ffd93d;--green:#0affa0;--red:#ff3d6e;
+  --text:#eeeeff;--muted:rgba(220,215,255,0.5);--r:14px;
+}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;font-size:15px}
+#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
+.z1{position:relative;z-index:1}
+
+/* ===== NAV - MOBILE FIRST ===== */
+nav{position:fixed;top:0;left:0;right:0;z-index:500;height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;background:rgba(4,4,13,.97);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+.nav-logo{font-family:'Orbitron',sans-serif;font-weight:900;font-size:1rem;letter-spacing:2px;background:linear-gradient(90deg,var(--glow),var(--glow2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-decoration:none}
+.nav-right{display:flex;gap:8px;align-items:center;flex-shrink:0}
+
+/* Music btn in nav */
+.nav-music-btn{background:rgba(139,110,255,.15);border:1px solid rgba(139,110,255,.3);border-radius:100px;padding:6px 12px;font-size:.72rem;font-weight:600;color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:5px;font-family:'Inter',sans-serif;transition:all .2s;white-space:nowrap}
+.nav-music-btn.playing{color:var(--glow2);border-color:rgba(0,229,255,.4);background:rgba(0,229,255,.1)}
+
+/* Admin button - always visible, prominent */
+.btn-admin{background:linear-gradient(135deg,var(--glow),#5535cc);color:#fff;border:none;border-radius:9px;padding:8px 14px;font-size:.78rem;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap;box-shadow:0 0 14px rgba(139,110,255,.5)}
+
+/* Search bar below nav */
+.search-bar{position:sticky;top:56px;z-index:400;background:rgba(4,4,13,.95);border-bottom:1px solid var(--border);padding:8px 14px}
+.search-inner{display:flex;align-items:center;background:rgba(139,110,255,.1);border:1px solid rgba(139,110,255,.2);border-radius:100px;padding:8px 14px;gap:8px}
+.search-inner input{background:transparent;border:none;outline:none;font-size:.85rem;color:var(--text);width:100%;font-family:'Inter',sans-serif}
+.search-inner input::placeholder{color:var(--muted)}
+.search-inner svg{width:14px;height:14px;flex-shrink:0;opacity:.5}
+
+/* Search dropdown */
+.search-drop{display:none;position:fixed;top:110px;left:14px;right:14px;background:var(--card2);border:1px solid var(--border);border-radius:14px;box-shadow:0 16px 48px rgba(0,0,0,.7);z-index:600;max-height:300px;overflow-y:auto}
+.search-drop.open{display:block}
+.sr-item{display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid rgba(139,110,255,.08);text-decoration:none;color:inherit}
+.sr-item:last-child{border-bottom:none}
+.sr-icon{width:34px;height:34px;border-radius:8px;background:var(--card);display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;overflow:hidden}
+.sr-icon img{width:100%;height:100%;object-fit:cover}
+.sr-info strong{display:block;font-size:.82rem;font-weight:600}
+.sr-info span{display:block;font-size:.7rem;color:var(--muted);margin-top:1px}
+.sr-empty{padding:1.25rem;text-align:center;font-size:.8rem;color:var(--muted)}
+
+/* ===== ADMIN BAR ===== */
+.admin-bar{display:none;position:sticky;top:110px;z-index:399;background:rgba(139,110,255,.15);border-bottom:1px solid rgba(139,110,255,.3);padding:8px 14px;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.admin-bar.on{display:flex}
+.admin-bar-l{font-size:.72rem;color:var(--glow);font-weight:700}
+.admin-bar-r{display:flex;gap:6px;flex-wrap:wrap}
+.bar-btn{background:rgba(139,110,255,.2);color:var(--glow);border:1px solid rgba(139,110,255,.35);border-radius:8px;padding:6px 12px;font-size:.72rem;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif}
+.bar-logout{background:rgba(255,61,110,.12);color:var(--red);border:1px solid rgba(255,61,110,.3);border-radius:8px;padding:6px 12px;font-size:.72rem;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif}
+
+/* ===== STATS (admin only) ===== */
+.stats-bar{display:none;background:rgba(139,110,255,.07);border-bottom:1px solid var(--border);padding:8px 14px;gap:14px;flex-wrap:wrap}
+.stats-bar.on{display:flex}
+.stat-item{display:flex;align-items:center;gap:6px;font-size:.72rem;color:var(--muted)}
+.stat-dot{width:6px;height:6px;border-radius:50%;animation:blink 2s infinite;flex-shrink:0}
+.dot-green{background:var(--green);box-shadow:0 0 5px var(--green)}
+.dot-gold{background:var(--gold);box-shadow:0 0 5px var(--gold)}
+.dot-cyan{background:var(--glow2);box-shadow:0 0 5px var(--glow2)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ===== HERO ===== */
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:7rem 1rem 4rem}
+.hero-eyebrow{font-size:.65rem;font-weight:700;color:var(--glow2);letter-spacing:3px;text-transform:uppercase;margin-bottom:1.25rem;opacity:.85}
+.hero-title{font-family:'Orbitron',sans-serif;font-weight:900;font-size:clamp(2.4rem,11vw,6rem);line-height:.95;letter-spacing:2px;background:linear-gradient(135deg,#fff 0%,var(--glow) 45%,var(--glow2) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:heroGlow 3s ease-in-out infinite alternate}
+@keyframes heroGlow{from{filter:drop-shadow(0 0 20px rgba(139,110,255,.5))}to{filter:drop-shadow(0 0 50px rgba(0,229,255,.6))}}
+.hero-sub{margin-top:1.25rem;font-size:.88rem;color:var(--muted);max-width:340px;line-height:1.8}
+.hero-stats{margin-top:2rem;display:none;gap:1.5rem;justify-content:center;flex-wrap:wrap}
+.hero-stats.on{display:flex}
+.hstat-num{font-family:'Orbitron',sans-serif;font-size:1.4rem;font-weight:900;background:linear-gradient(135deg,var(--glow),var(--glow2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hstat-label{font-size:.62rem;color:var(--muted);letter-spacing:1px;margin-top:2px;text-align:center}
+
+/* ===== SECTIONS ===== */
+.sec{padding:3rem 14px;max-width:700px;margin:0 auto}
+.glow-div{height:1px;background:linear-gradient(90deg,transparent,var(--glow),var(--glow2),transparent);opacity:.3}
+.sec-head{text-align:center;margin-bottom:2rem}
+.sec-label{display:inline-flex;align-items:center;gap:5px;font-size:.65rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:4px 13px;border-radius:100px;margin-bottom:.9rem}
+.lbl-purple{background:rgba(139,110,255,.15);color:var(--glow);border:1px solid rgba(139,110,255,.3)}
+.lbl-cyan{background:rgba(0,229,255,.1);color:var(--glow2);border:1px solid rgba(0,229,255,.25)}
+.lbl-gold{background:rgba(255,217,61,.1);color:var(--gold);border:1px solid rgba(255,217,61,.25)}
+.lbl-green{background:rgba(10,255,160,.1);color:var(--green);border:1px solid rgba(10,255,160,.25)}
+.lbl-red{background:rgba(255,61,110,.1);color:var(--red);border:1px solid rgba(255,61,110,.25)}
+.sec-head h2{font-family:'Orbitron',sans-serif;font-size:1.5rem;font-weight:900;letter-spacing:1px}
+.sec-head p{margin-top:.6rem;color:var(--muted);font-size:.82rem;line-height:1.7}
+.count-pill{background:rgba(139,110,255,.15);color:var(--glow);border:1px solid rgba(139,110,255,.25);border-radius:100px;padding:2px 10px;font-size:.68rem;font-weight:700;margin-left:8px;vertical-align:middle}
+
+/* ===== GRIDS ===== */
+.grid1{display:flex;flex-direction:column;gap:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* ===== GAME CARD ===== */
+.game-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;position:relative;transition:border-color .2s}
+.game-card:hover{border-color:rgba(139,110,255,.4)}
+.game-cover{width:100%;height:150px;background:var(--card2);display:flex;align-items:center;justify-content:center;font-size:3rem;overflow:hidden;position:relative}
+.game-cover img{width:100%;height:100%;object-fit:cover}
+.game-cover-gradient{position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,rgba(13,13,34,.95))}
+.game-body{padding:12px}
+.game-top{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.game-logo{width:44px;height:44px;border-radius:10px;background:var(--card2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0;overflow:hidden}
+.game-logo img{width:100%;height:100%;object-fit:cover}
+.game-name{font-family:'Orbitron',sans-serif;font-size:.82rem;font-weight:700;letter-spacing:.3px}
+.game-genre{font-size:.7rem;color:var(--muted);margin-top:2px}
+.game-desc{font-size:.78rem;color:rgba(220,215,255,.7);line-height:1.6;margin-bottom:10px}
+.game-trailer{width:100%;border-radius:10px;overflow:hidden;aspect-ratio:16/9;position:relative;margin-bottom:10px;background:var(--card2)}
+.game-trailer img{width:100%;height:100%;object-fit:cover}
+.game-trailer-play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.4)}
+.game-trailer-play span{width:44px;height:44px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;font-size:1.1rem}
+.game-shots{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:10px;-webkit-overflow-scrolling:touch}
+.game-shots img{height:64px;border-radius:8px;object-fit:cover;flex-shrink:0;border:1px solid var(--border)}
+.game-btns{display:flex;gap:8px;flex-wrap:wrap}
+
+/* ===== APP CARD ===== */
+.app-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;position:relative;transition:border-color .2s}
+.app-card:hover{border-color:rgba(0,229,255,.35)}
+.app-banner{width:100%;height:110px;background:var(--card2);display:flex;align-items:center;justify-content:center;font-size:2.5rem;overflow:hidden;position:relative}
+.app-banner img{width:100%;height:100%;object-fit:cover}
+.app-banner-gradient{position:absolute;inset:0;background:linear-gradient(to bottom,transparent 30%,rgba(13,13,34,.95))}
+.app-body{padding:12px}
+.app-top{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.app-logo{width:50px;height:50px;border-radius:12px;background:var(--card2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex-shrink:0;overflow:hidden}
+.app-logo img{width:100%;height:100%;object-fit:cover}
+.app-name{font-family:'Orbitron',sans-serif;font-size:.82rem;font-weight:700}
+.app-cat{font-size:.68rem;color:var(--glow2);margin-top:2px;font-weight:600}
+.app-desc{font-size:.78rem;color:rgba(220,215,255,.7);line-height:1.6;margin-bottom:10px}
+.app-shots{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:10px;-webkit-overflow-scrolling:touch}
+.app-shots img{height:60px;border-radius:8px;object-fit:cover;flex-shrink:0;border:1px solid var(--border)}
+.app-btns{display:flex;gap:8px;flex-wrap:wrap}
+
+/* ===== SOCIAL CARD ===== */
+.social-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;position:relative;transition:border-color .2s;text-decoration:none;color:inherit;display:block}
+.social-card:hover{border-color:rgba(0,229,255,.3)}
+.social-banner{width:100%;height:80px;background:var(--card2);display:flex;align-items:center;justify-content:center;font-size:2rem;overflow:hidden;position:relative}
+.social-banner img{width:100%;height:100%;object-fit:cover}
+.social-banner-gradient{position:absolute;inset:0;background:linear-gradient(to bottom,transparent,rgba(13,13,34,.8))}
+.social-body{padding:12px;display:flex;align-items:center;gap:12px}
+.social-logo{width:46px;height:46px;border-radius:50%;background:var(--card2);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0;overflow:hidden;margin-top:-28px;position:relative;z-index:1;box-shadow:0 4px 12px rgba(0,0,0,.5)}
+.social-logo img{width:100%;height:100%;object-fit:cover}
+.social-info{flex:1;min-width:0}
+.social-name{font-family:'Orbitron',sans-serif;font-size:.8rem;font-weight:700}
+.social-handle{font-size:.72rem;color:var(--muted);margin-top:2px}
+.social-subs{font-size:.7rem;color:var(--gold);font-weight:600;margin-top:3px}
+.social-desc{font-size:.72rem;color:var(--muted);margin-top:2px}
+.social-arrow{font-size:1rem;color:var(--muted);flex-shrink:0;transition:transform .2s}
+.social-card:hover .social-arrow{transform:translateX(4px);color:var(--glow2)}
+
+/* ===== BOOK CARD ===== */
+.book-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;position:relative;display:flex;gap:12px;padding:12px}
+.book-cover-wrap{width:80px;flex-shrink:0}
+.book-cover{width:80px;height:110px;border-radius:8px;background:linear-gradient(135deg,var(--card2),#0a0a20);display:flex;align-items:center;justify-content:center;font-size:2rem;border:1px solid var(--border);overflow:hidden}
+.book-cover img{width:100%;height:100%;object-fit:cover}
+.book-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.book-type{font-size:.65rem;font-weight:700;color:var(--green)}
+.book-name{font-family:'Orbitron',sans-serif;font-size:.8rem;font-weight:700;line-height:1.3}
+.book-desc{font-size:.75rem;color:var(--muted);line-height:1.5;flex:1}
+.book-btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:auto}
+
+/* ===== MUSIC LIST ===== */
+.music-list{display:flex;flex-direction:column;gap:8px}
+.music-item{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px 14px;display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit;transition:border-color .2s,background .2s}
+.music-item:hover{border-color:rgba(255,61,110,.4);background:rgba(255,61,110,.05)}
+.music-num{font-size:.75rem;color:var(--muted);width:18px;text-align:center;flex-shrink:0}
+.music-thumb{width:42px;height:42px;border-radius:8px;background:var(--card2);flex-shrink:0;overflow:hidden;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:1.1rem}
+.music-thumb img{width:100%;height:100%;object-fit:cover}
+.music-info{flex:1;min-width:0}
+.music-info strong{display:block;font-size:.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.music-info span{display:block;font-size:.7rem;color:var(--muted);margin-top:1px}
+.music-play{width:32px;height:32px;border-radius:50%;background:rgba(255,61,110,.15);border:1px solid rgba(255,61,110,.3);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.music-play svg{width:11px;height:11px;fill:var(--red)}
+
+/* ===== BUTTONS ===== */
+.btn-purple{background:rgba(139,110,255,.18);color:var(--glow);border:1px solid rgba(139,110,255,.35);border-radius:9px;padding:8px 14px;font-size:.75rem;font-weight:700;cursor:pointer;text-decoration:none;display:inline-block;font-family:'Inter',sans-serif}
+.btn-cyan{background:rgba(0,229,255,.1);color:var(--glow2);border:1px solid rgba(0,229,255,.28);border-radius:9px;padding:8px 14px;font-size:.75rem;font-weight:700;cursor:pointer;text-decoration:none;display:inline-block;font-family:'Inter',sans-serif}
+.btn-green{background:rgba(10,255,160,.1);color:var(--green);border:1px solid rgba(10,255,160,.28);border-radius:9px;padding:8px 14px;font-size:.75rem;font-weight:700;cursor:pointer;text-decoration:none;display:inline-block;font-family:'Inter',sans-serif}
+.btn-outline{background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:9px;padding:8px 14px;font-size:.75rem;cursor:pointer;text-decoration:none;display:inline-block;font-family:'Inter',sans-serif}
+.btn-red{background:rgba(255,61,110,.12);color:var(--red);border:1px solid rgba(255,61,110,.28);border-radius:9px;padding:8px 14px;font-size:.75rem;font-weight:700;cursor:pointer;text-decoration:none;display:inline-block;font-family:'Inter',sans-serif}
+.apk-badge{display:inline-flex;align-items:center;gap:4px;font-size:.66rem;font-weight:700;color:var(--green);background:rgba(10,255,160,.1);border:1px solid rgba(10,255,160,.28);border-radius:100px;padding:2px 8px}
+
+/* ===== EMPTY ===== */
+.empty{text-align:center;padding:3rem 1rem;color:var(--muted)}
+.empty .big{font-size:2.5rem;margin-bottom:.75rem}
+.coming-txt{font-family:'Orbitron',sans-serif;font-size:.85rem;letter-spacing:2px;margin-bottom:.5rem;animation:gPulse 2s ease-in-out infinite alternate}
+@keyframes gPulse{from{filter:drop-shadow(0 0 4px currentColor)}to{filter:drop-shadow(0 0 14px currentColor)}}
+
+/* ===== DELETE ===== */
+.del-x{position:absolute;top:8px;right:8px;background:rgba(255,61,110,.2);color:var(--red);border:1px solid rgba(255,61,110,.35);border-radius:7px;padding:3px 9px;font-size:.68rem;font-weight:700;cursor:pointer;display:none;z-index:20;font-family:'Inter',sans-serif}
+.admin-mode .del-x{display:inline-block}
+.item-wrap{position:relative}
+
+/* ===== FEEDBACK ===== */
+.feedback-form{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:1.25rem;position:relative;overflow:hidden}
+.feedback-form h3{font-family:'Orbitron',sans-serif;font-size:.9rem;font-weight:700;margin-bottom:1.25rem}
+.fgroup{margin-bottom:.9rem}
+.fgroup label{display:block;font-size:.75rem;font-weight:600;color:var(--muted);margin-bottom:5px}
+.fgroup input,.fgroup textarea,.fgroup select{width:100%;background:rgba(139,110,255,.06);border:1px solid var(--border);border-radius:10px;padding:10px 13px;font-size:.85rem;color:var(--text);font-family:'Inter',sans-serif;outline:none;transition:border-color .2s;-webkit-appearance:none}
+.fgroup input:focus,.fgroup textarea:focus,.fgroup select:focus{border-color:rgba(255,217,61,.5)}
+.fgroup textarea{resize:vertical;min-height:90px;line-height:1.6}
+.fgroup select option{background:var(--card2)}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+input[type=file]{padding:8px 0;color:var(--muted);font-size:.78rem;background:transparent;border:none}
+input[type=file]::file-selector-button{background:rgba(139,110,255,.18);color:var(--glow);border:1px solid rgba(139,110,255,.35);border-radius:8px;padding:6px 12px;font-size:.72rem;font-weight:700;cursor:pointer;margin-right:8px;font-family:'Inter',sans-serif}
+.btn-submit{background:linear-gradient(135deg,var(--gold),#ffaa00);color:#000;border:none;border-radius:11px;padding:13px;font-size:.9rem;font-weight:800;cursor:pointer;font-family:'Inter',sans-serif;width:100%;margin-top:.5rem}
+.feedback-success{display:none;text-align:center;padding:2rem}
+
+/* ===== FOOTER ===== */
+footer{border-top:1px solid var(--border);padding:2rem 14px;text-align:center;max-width:700px;margin:0 auto}
+.footer-logo{font-family:'Orbitron',sans-serif;font-size:1.2rem;font-weight:900;background:linear-gradient(90deg,var(--glow),var(--glow2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:.5rem}
+.footer-links{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:1rem 0}
+.footer-links a{font-size:.75rem;color:var(--muted);text-decoration:none}
+.footer-copy{font-size:.68rem;color:rgba(220,215,255,.2)}
+
+/* ===== OVERLAY / MODAL ===== */
+.overlay{display:none;position:fixed;inset:0;background:rgba(4,4,13,.9);z-index:800;align-items:flex-end;justify-content:center;padding:0;backdrop-filter:blur(6px)}
+.overlay.open{display:flex}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:20px 20px 0 0;width:100%;max-height:92vh;overflow-y:auto;padding:1.5rem;box-shadow:0 -20px 60px rgba(139,110,255,.3)}
+.modal-title{font-family:'Orbitron',sans-serif;font-size:1rem;font-weight:900;letter-spacing:.5px;margin-bottom:1.25rem}
+.modal-tabs{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:1.25rem;padding-bottom:.9rem;border-bottom:1px solid var(--border);overflow-x:auto;-webkit-overflow-scrolling:touch}
+.mtab{background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:6px 12px;font-size:.72rem;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap;flex-shrink:0}
+.mtab.on{background:rgba(139,110,255,.2);color:var(--glow);border-color:rgba(139,110,255,.45)}
+.tab-p{display:none}.tab-p.on{display:block}
+.modal-acts{display:flex;gap:8px;margin-top:1.25rem;flex-wrap:wrap}
+.btn-save{background:linear-gradient(135deg,var(--glow),#5535cc);color:#fff;border:none;border-radius:10px;padding:12px 24px;font-size:.85rem;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif}
+.btn-cancel{background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:10px;padding:12px 18px;font-size:.85rem;cursor:pointer;font-family:'Inter',sans-serif}
+
+/* Login modal - center on mobile */
+.overlay.center{align-items:center;padding:1rem}
+.login-box{background:var(--card);border:1px solid var(--border);border-radius:18px;width:100%;max-width:360px;padding:1.75rem;box-shadow:0 0 60px rgba(139,110,255,.3)}
+.login-box h2{font-family:'Orbitron',sans-serif;font-size:.95rem;font-weight:900;letter-spacing:1px;text-align:center;margin-bottom:1.25rem}
+.login-err{background:rgba(255,61,110,.12);border:1px solid rgba(255,61,110,.3);border-radius:9px;color:var(--red);font-size:.75rem;padding:8px 12px;margin-bottom:.9rem;display:none}
+
+/* Music set modal */
+.music-set-box{background:var(--card);border:1px solid var(--border);border-radius:18px;width:100%;max-width:380px;padding:1.75rem;box-shadow:0 0 40px rgba(0,229,255,.2)}
+.music-set-box h2{font-family:'Orbitron',sans-serif;font-size:.9rem;font-weight:900;margin-bottom:1.25rem;text-align:center;color:var(--glow2)}
+</style>
+</head>
+<body>
+<canvas id="bg-canvas"></canvas>
+
+<!-- ===== MODALS ===== -->
+<div class="overlay center" id="ov-login">
+  <div class="login-box">
+    <h2>⚡ ADMIN LOGIN</h2>
+    <div class="login-err" id="login-err">Wrong password. Try again.</div>
+    <div class="fgroup"><label>Password</label><input type="password" id="login-pw" placeholder="Enter password" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <div class="modal-acts" style="flex-direction:column;gap:8px">
+      <button class="btn-save" style="width:100%;text-align:center" onclick="doLogin()">Enter Zone ⚡</button>
+      <button class="btn-cancel" style="width:100%;text-align:center" onclick="closeOv('ov-login')">Continue as Guest</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay center" id="ov-pw">
+  <div class="login-box">
+    <h2>🔑 Change Password</h2>
+    <div class="fgroup"><label>New password</label><input type="password" id="pw1" placeholder="New password"></div>
+    <div class="fgroup"><label>Confirm</label><input type="password" id="pw2" placeholder="Confirm"></div>
+    <div id="pw-err" style="color:var(--red);font-size:.75rem;margin-bottom:.5rem;display:none">Passwords don't match.</div>
+    <div class="modal-acts"><button class="btn-save" onclick="changePw()">Save</button><button class="btn-cancel" onclick="closeOv('ov-pw')">Cancel</button></div>
+  </div>
+</div>
+
+<div class="overlay center" id="ov-music">
+  <div class="music-set-box">
+    <h2>🎵 Set Background Music</h2>
+    <div class="fgroup"><label>Direct MP3 audio URL *</label><input id="music-url-input" placeholder="https://... (direct .mp3 link)"><p style="font-size:.68rem;color:var(--muted);margin-top:4px">Use Google Drive: share file → copy link → replace /view with /uc?export=download</p></div>
+    <div class="fgroup"><label>Song title</label><input id="music-title-input" placeholder="e.g. Vplayzone Vibes"></div>
+    <div class="fgroup"><label>Or upload MP3 directly</label><input type="file" id="music-file-input" accept="audio/*,audio/mp3,.mp3"></div>
+    <div class="modal-acts">
+      <button class="btn-save" onclick="saveMusic()" style="background:linear-gradient(135deg,var(--glow2),#0088aa)">Save & Play</button>
+      <button class="btn-cancel" onclick="closeOv('ov-music')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="ov-add">
+  <div class="modal">
+    <div class="modal-title">+ Add Content</div>
+    <div class="modal-tabs">
+      <button class="mtab on" onclick="switchTab('game',this)">🎮 Game</button>
+      <button class="mtab" onclick="switchTab('app',this)">📱 App</button>
+      <button class="mtab" onclick="switchTab('video',this)">📹 Video</button>
+      <button class="mtab" onclick="switchTab('music',this)">🎵 Song</button>
+      <button class="mtab" onclick="switchTab('book',this)">📚 Book</button>
+      <button class="mtab" onclick="switchTab('social',this)">🔗 Social</button>
+    </div>
+
+    <!-- GAME -->
+    <div class="tab-p on" id="tab-game">
+      <div class="fgroup"><label>Game title *</label><input id="g-title" placeholder="My Awesome Game"></div>
+      <div class="fgroup"><label>Short description</label><textarea id="g-desc" placeholder="What is this game about? Features, how to play..."></textarea></div>
+      <div class="frow">
+        <div class="fgroup"><label>Genre</label><input id="g-genre" placeholder="Action, RPG..."></div>
+        <div class="fgroup"><label>Platform</label><select id="g-platform"><option>Android</option><option>Browser</option><option>PC</option><option>iOS</option></select></div>
+      </div>
+      <div class="fgroup"><label>🖼 Cover/banner image</label><input type="file" id="g-cover" accept="image/*"></div>
+      <div class="fgroup"><label>🎮 Game logo/icon image</label><input type="file" id="g-logo" accept="image/*"></div>
+      <div class="fgroup"><label>Screenshots (up to 3 URLs)</label>
+        <input id="g-ss1" placeholder="Screenshot 1 URL" style="margin-bottom:5px">
+        <input id="g-ss2" placeholder="Screenshot 2 URL" style="margin-bottom:5px">
+        <input id="g-ss3" placeholder="Screenshot 3 URL">
+      </div>
+      <div class="fgroup"><label>▶ YouTube trailer URL (optional)</label><input id="g-vid" placeholder="https://youtube.com/watch?v=..."></div>
+      <div class="fgroup"><label>🌐 Play online URL (optional)</label><input id="g-play" placeholder="https://... (link to play in browser)"></div>
+      <div class="fgroup"><label>📦 Upload APK file (optional)</label><input type="file" id="g-apk" accept=".apk"><p style="font-size:.68rem;color:var(--muted);margin-top:4px">For large APKs, use a Google Drive link below instead</p></div>
+      <div class="fgroup"><label>📥 APK download URL (if not uploading)</label><input id="g-apk-url" placeholder="https://drive.google.com/..."></div>
+    </div>
+
+    <!-- APP -->
+    <div class="tab-p" id="tab-app">
+      <div class="fgroup"><label>App name *</label><input id="a-title" placeholder="My App"></div>
+      <div class="fgroup"><label>Short description</label><textarea id="a-desc" placeholder="What does this app do? Key features..."></textarea></div>
+      <div class="frow">
+        <div class="fgroup"><label>Category</label><input id="a-cat" placeholder="Utility, Education..."></div>
+        <div class="fgroup"><label>Platform</label><select id="a-platform"><option>Android</option><option>iOS</option><option>Web</option><option>All</option></select></div>
+      </div>
+      <div class="fgroup"><label>🖼 Banner/cover image</label><input type="file" id="a-cover" accept="image/*"></div>
+      <div class="fgroup"><label>📱 App logo/icon image</label><input type="file" id="a-logo" accept="image/*"></div>
+      <div class="fgroup"><label>Screenshots (up to 2 URLs)</label>
+        <input id="a-ss1" placeholder="Screenshot 1 URL" style="margin-bottom:5px">
+        <input id="a-ss2" placeholder="Screenshot 2 URL">
+      </div>
+      <div class="fgroup"><label>📦 Upload APK file (optional)</label><input type="file" id="a-apk" accept=".apk"></div>
+      <div class="fgroup"><label>📥 APK download URL (if not uploading)</label><input id="a-apk-url" placeholder="https://drive.google.com/..."></div>
+      <div class="fgroup"><label>🏪 Store link (Play Store / App Store)</label><input id="a-store" placeholder="https://play.google.com/..."></div>
+      <div class="fgroup"><label>🌐 Website (optional)</label><input id="a-web" placeholder="https://..."></div>
+    </div>
+
+    <!-- VIDEO -->
+    <div class="tab-p" id="tab-video">
+      <div class="fgroup"><label>YouTube URL *</label><input id="v-id" placeholder="https://youtube.com/watch?v=..."></div>
+      <div class="fgroup"><label>Title *</label><input id="v-title" placeholder="My Video Title"></div>
+      <div class="fgroup"><label>Description</label><textarea id="v-desc" placeholder="What is this video about?"></textarea></div>
+      <div class="frow">
+        <div class="fgroup"><label>Tag</label><input id="v-tag" placeholder="Gaming, Tutorial..."></div>
+        <div class="fgroup"><label>Year</label><input id="v-year" placeholder="2024"></div>
+      </div>
+    </div>
+
+    <!-- MUSIC/SONG -->
+    <div class="tab-p" id="tab-music">
+      <div class="fgroup"><label>YouTube song URL *</label><input id="m-id" placeholder="https://youtube.com/watch?v=..."></div>
+      <div class="fgroup"><label>Song title *</label><input id="m-title" placeholder="Song Title"></div>
+      <div class="fgroup"><label>Artist</label><input id="m-artist" placeholder="Artist name"></div>
+      <div class="fgroup"><label>Year</label><input id="m-year" placeholder="2024"></div>
+    </div>
+
+    <!-- BOOK -->
+    <div class="tab-p" id="tab-book">
+      <div class="fgroup"><label>Book / course title *</label><input id="b-title" placeholder="My Book"></div>
+      <div class="fgroup"><label>Short description</label><textarea id="b-desc" placeholder="What is this book about?"></textarea></div>
+      <div class="frow">
+        <div class="fgroup"><label>Type</label><select id="b-type"><option>Book</option><option>Course</option><option>Guide</option><option>eBook</option></select></div>
+        <div class="fgroup"><label>Genre</label><input id="b-genre" placeholder="Fiction, Tech..."></div>
+      </div>
+      <div class="fgroup"><label>📖 Cover image</label><input type="file" id="b-cover" accept="image/*"></div>
+      <div class="fgroup"><label>Cover emoji (if no image)</label><input id="b-icon" placeholder="📖" maxlength="4"></div>
+      <div class="fgroup"><label>📥 Download link</label><input id="b-dl" placeholder="https://drive.google.com/..."></div>
+      <div class="fgroup"><label>🌐 Read online link</label><input id="b-read" placeholder="https://..."></div>
+    </div>
+
+    <!-- SOCIAL -->
+    <div class="tab-p" id="tab-social">
+      <div class="fgroup"><label>Platform name * (e.g. YouTube, TikTok)</label><input id="s-name" placeholder="YouTube"></div>
+      <div class="fgroup"><label>Your channel / profile URL *</label><input id="s-url" placeholder="https://youtube.com/@vplayzone"></div>
+      <div class="fgroup"><label>Handle</label><input id="s-handle" placeholder="@vplayzone"></div>
+      <div class="fgroup"><label>Description</label><input id="s-desc" placeholder="My gaming channel"></div>
+      <div class="fgroup"><label>Subscribers / followers</label><input id="s-subs" placeholder="e.g. 1.2K subscribers"></div>
+      <div class="fgroup"><label>🖼 Channel banner image</label><input type="file" id="s-banner" accept="image/*"></div>
+      <div class="fgroup"><label>👤 Channel / profile logo image</label><input type="file" id="s-logo" accept="image/*"></div>
+      <div class="fgroup"><label>Color theme</label><select id="s-color"><option value="purple">Purple</option><option value="cyan">Cyan</option><option value="red">Red</option><option value="green">Green</option><option value="gold">Gold</option></select></div>
+    </div>
+
+    <div class="modal-acts">
+      <button class="btn-save" onclick="saveItem()">Save ✦</button>
+      <button class="btn-cancel" onclick="closeOv('ov-add')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== NAV ===== -->
+<nav class="z1">
+  <a href="#" class="nav-logo">VPLAYZONE</a>
+  <div class="nav-right">
+    <button id="nav-music-btn" class="nav-music-btn" onclick="toggleMusic()">🎵 Music</button>
+    <button class="btn-admin" onclick="openOv('ov-login')">Admin</button>
+  </div>
+</nav>
+
+<!-- ===== SEARCH ===== -->
+<div class="search-bar z1">
+  <div class="search-inner">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input type="text" id="search-input" placeholder="Search games, apps, books..." oninput="doSearch(this.value)" onfocus="doSearch(this.value)" onblur="setTimeout(()=>closeDrop(),200)">
+  </div>
+</div>
+<div class="search-drop z1" id="search-drop"></div>
+
+<!-- ===== ADMIN BAR ===== -->
+<div class="admin-bar z1" id="admin-bar">
+  <span class="admin-bar-l">⚡ Admin Mode</span>
+  <div class="admin-bar-r">
+    <button class="bar-btn" onclick="openOv('ov-add')">+ Add</button>
+    <button class="bar-btn" onclick="openOv('ov-music')">🎵 Music</button>
+    <button class="bar-btn" onclick="openOv('ov-pw')">🔑 PW</button>
+    <button class="bar-logout" onclick="logout()">Exit</button>
+  </div>
+</div>
+
+<!-- ===== STATS (admin only) ===== -->
+<div class="stats-bar z1" id="admin-stats">
+  <div class="stat-item"><div class="stat-dot dot-green"></div><span>👁 <strong id="stat-visits" style="color:var(--green)">0</strong> visits</span></div>
+  <div class="stat-item"><div class="stat-dot dot-gold"></div><span>Today: <strong id="stat-today" style="color:var(--gold)">0</strong></span></div>
+  <div class="stat-item"><div class="stat-dot dot-cyan"></div><span><strong id="stat-items" style="color:var(--glow2)">0</strong> items</span></div>
+</div>
+
+<!-- ===== HERO ===== -->
+<section class="hero z1" id="hero">
+  <div class="hero-eyebrow">Welcome to the zone</div>
+  <h1 class="hero-title">VPLAYZONE</h1>
+  <p class="hero-sub">Games, apps, videos, music and books — all in one zone. Explore and download freely.</p>
+  <div class="hero-stats" id="hero-stats">
+    <div><div class="hstat-num" id="hs-visits">0</div><div class="hstat-label">VISITS</div></div>
+    <div><div class="hstat-num" id="hs-games">0</div><div class="hstat-label">GAMES</div></div>
+    <div><div class="hstat-num" id="hs-apps">0</div><div class="hstat-label">APPS</div></div>
+    <div><div class="hstat-num" id="hs-books">0</div><div class="hstat-label">BOOKS</div></div>
+  </div>
+</section>
+
+<div class="glow-div"></div>
+
+<!-- GAMES -->
+<section class="sec z1" id="games">
+  <div class="sec-head">
+    <span class="sec-label lbl-purple">🎮 My Games</span>
+    <h2>Games <span class="count-pill" id="g-count">0</span></h2>
+    <p>Play in browser, download APK, or get on store</p>
+  </div>
+  <!-- AD SLOT: paste Adsterra/Monetag code here when ready -->
+  <div class="grid1" id="g-list">
+    <div class="empty"><div class="big">🎮</div><p class="coming-txt" style="color:var(--glow)">COMING SOON</p><small>Games on their way!</small></div>
+  </div>
+</section>
+
+<div class="glow-div"></div>
+
+<!-- APPS -->
+<section class="sec z1" id="apps">
+  <div class="sec-head">
+    <span class="sec-label lbl-cyan">📱 My Apps</span>
+    <h2>Apps <span class="count-pill" id="a-count">0</span></h2>
+    <p>Download my published apps or grab the APK</p>
+  </div>
+  <div class="grid1" id="a-list">
+    <div class="empty"><div class="big">📱</div><p class="coming-txt" style="color:var(--glow2)">COMING SOON</p><small>Apps being prepared!</small></div>
+  </div>
+</section>
+
+<div class="glow-div"></div>
+
+<!-- SOCIAL -->
+<section class="sec z1" id="social">
+  <div class="sec-head">
+    <span class="sec-label lbl-red">🔗 Channels & Socials</span>
+    <h2>Find Me Online <span class="count-pill" id="s-count">0</span></h2>
+    <p>My YouTube channels, socials and community links</p>
+  </div>
+  <div class="grid1" id="s-list">
+    <div class="empty"><div class="big">🔗</div><p class="coming-txt" style="color:var(--red)">COMING SOON</p><small>Links dropping soon!</small></div>
+  </div>
+</section>
+
+<div class="glow-div"></div>
+
+<!-- BOOKS -->
+<section class="sec z1" id="books">
+  <div class="sec-head">
+    <span class="sec-label lbl-green">📚 Books & Courses</span>
+    <h2>Learn & Read <span class="count-pill" id="b-count">0</span></h2>
+    <p>My books and courses — free to download or read online</p>
+  </div>
+  <!-- AD SLOT: paste Adsterra/Monetag code here when ready -->
+  <div class="grid1" id="b-list">
+    <div class="empty"><div class="big">📚</div><p class="coming-txt" style="color:var(--green)">COMING SOON</p><small>Books on the way!</small></div>
+  </div>
+</section>
+
+<div class="glow-div"></div>
+
+<!-- MUSIC -->
+<section class="sec z1" id="music">
+  <div class="sec-head">
+    <span class="sec-label lbl-red">🎵 Songs</span>
+    <h2>Music <span class="count-pill" id="m-count">0</span></h2>
+    <p>YouTube songs — tap to stream</p>
+  </div>
+  <div class="music-list" id="m-list">
+    <div class="empty"><div class="big">🎵</div><p class="coming-txt" style="color:var(--red)">COMING SOON</p><small>Songs dropping soon!</small></div>
+  </div>
+</section>
+
+<div class="glow-div"></div>
+
+<!-- FEEDBACK -->
+<section class="sec z1" id="feedback">
+  <div class="sec-head">
+    <span class="sec-label lbl-gold">💬 Feedback</span>
+    <h2>Your Thoughts</h2>
+    <p>Drop a message — every one gets read.</p>
+  </div>
+  <div class="feedback-form" id="fb-form">
+    <h3>Send a message ✦</h3>
+    <div class="fgroup"><label>Your name</label><input id="fb-name" placeholder="Your name"></div>
+    <div class="fgroup"><label>Type</label>
+      <select id="fb-type">
+        <option>💬 General feedback</option>
+        <option>🐛 Bug report</option>
+        <option>💡 Suggestion</option>
+        <option>⭐ Review</option>
+        <option>🙏 Thank you</option>
+      </select>
+    </div>
+    <div class="fgroup"><label>Message *</label><textarea id="fb-msg" placeholder="Write your message..."></textarea></div>
+    <button class="btn-submit" onclick="submitFeedback()">Send Message ✦</button>
+    <p style="text-align:center;margin-top:.9rem;font-size:.7rem;color:var(--muted)">Or email: <a href="mailto:vplayzoneyt@gmail.com" style="color:var(--gold);text-decoration:none">vplayzoneyt@gmail.com</a></p>
+  </div>
+  <div class="feedback-success" id="fb-success">
+    <div style="font-size:2.5rem;margin-bottom:.75rem">🎉</div>
+    <h3 style="font-family:'Orbitron',sans-serif;margin-bottom:.5rem;font-size:.95rem">Thank you!</h3>
+    <p style="color:var(--muted);font-size:.85rem">Message sent to vplayzoneyt@gmail.com!</p>
+  </div>
+  <div id="fb-list" style="margin-top:1.5rem;display:none"></div>
+</section>
+
+<!-- AD SLOT: paste footer Adsterra/Monetag code here when ready -->
+
+<footer class="z1">
+  <div class="footer-logo">VPLAYZONE</div>
+  <div class="footer-links">
+    <a href="#games">Games</a><a href="#apps">Apps</a><a href="#social">Channels</a>
+    <a href="#books">Books</a><a href="#music">Music</a><a href="#feedback">Feedback</a>
+  </div>
+  <div class="footer-copy">© 2024 Vplayzone · vplayzoneyt@gmail.com</div>
+</footer>
+
+<audio id="bg-audio" loop></audio>
+
+<script>
+// ===== 3D BG =====
+(function(){
+  const c=document.getElementById('bg-canvas'),ctx=c.getContext('2d')
+  let W,H,mouse={x:200,y:300},t=0
+  const COLS=['#8b6eff','#00e5ff','#0affa0','#ff3d6e','#ffd93d']
+  let stars=[],particles=[],shooters=[],orbs=[]
+  function rand(a,b){return Math.random()*(b-a)+a}
+  function pick(a){return a[Math.floor(Math.random()*a.length)]}
+  function rsz(){W=c.width=innerWidth;H=c.height=innerHeight;init()}
+  function init(){
+    stars=[];for(let i=0;i<150;i++)stars.push({x:rand(0,W),y:rand(0,H),r:rand(.3,1.2),a:rand(.2,.9),ph:rand(0,Math.PI*2),sp:rand(.005,.02)})
+    particles=[];for(let i=0;i<70;i++)particles.push({x:rand(0,W),y:rand(0,H),vx:rand(-.3,.3),vy:rand(-.3,.3),r:rand(.8,2.2),col:pick(COLS),a:rand(.25,.7),d:rand(.3,1)})
+    orbs=[];const oc=['rgba(139,110,255,','rgba(0,229,255,','rgba(10,255,160,']
+    for(let i=0;i<4;i++)orbs.push({ox:rand(0,W),oy:rand(0,H),r:rand(80,200),col:pick(oc),sp:rand(.0004,.0008),angle:rand(0,Math.PI*2),rx:rand(60,150),ry:rand(50,120)})
+    shooters=[];for(let i=0;i<3;i++)spawnShooter()
+  }
+  function spawnShooter(){shooters.push({x:rand(0,W),y:rand(-10,H*.3),vx:rand(3,7),vy:rand(1,3.5),len:rand(60,140),a:1,col:pick(COLS)})}
+  document.addEventListener('mousemove',e=>{mouse.x=e.clientX;mouse.y=e.clientY})
+  document.addEventListener('touchmove',e=>{mouse.x=e.touches[0].clientX;mouse.y=e.touches[0].clientY})
+  function draw(){
+    ctx.clearRect(0,0,W,H);t+=.007
+    const bg=ctx.createRadialGradient(W*.5,H*.4,.1,W*.5,H*.4,Math.max(W,H)*.85)
+    bg.addColorStop(0,'rgba(10,5,35,.98)');bg.addColorStop(.5,'rgba(5,4,18,.99)');bg.addColorStop(1,'rgba(2,2,10,1)')
+    ctx.fillStyle=bg;ctx.fillRect(0,0,W,H)
+    orbs.forEach(o=>{
+      o.angle+=o.sp
+      const ox=o.ox+Math.cos(o.angle)*o.rx+(mouse.x-W*.5)*.01
+      const oy=o.oy+Math.sin(o.angle)*o.ry+(mouse.y-H*.5)*.01
+      const g=ctx.createRadialGradient(ox,oy,.1,ox,oy,o.r)
+      g.addColorStop(0,o.col+'0.07)');g.addColorStop(1,o.col+'0)')
+      ctx.fillStyle=g;ctx.beginPath();ctx.arc(ox,oy,o.r,0,Math.PI*2);ctx.fill()
+    })
+    ctx.strokeStyle='rgba(139,110,255,0.04)';ctx.lineWidth=.8
+    for(let x=0;x<W;x+=70){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke()}
+    for(let y=0;y<H;y+=70){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}
+    stars.forEach(s=>{
+      s.ph+=s.sp
+      const px=s.x+(mouse.x-W*.5)*s.r*.003,py=s.y+(mouse.y-H*.5)*s.r*.003
+      ctx.beginPath();ctx.arc(px,py,s.r,0,Math.PI*2)
+      ctx.fillStyle='#fff';ctx.globalAlpha=s.a*(0.5+0.5*Math.sin(s.ph));ctx.fill();ctx.globalAlpha=1
+    })
+    particles.forEach(p=>{
+      p.x+=p.vx*p.d+(mouse.x-W*.5)*p.d*.0006;p.y+=p.vy*p.d+(mouse.y-H*.5)*p.d*.0006
+      if(p.x<-5)p.x=W+5;if(p.x>W+5)p.x=-5;if(p.y<-5)p.y=H+5;if(p.y>H+5)p.y=-5
+      ctx.beginPath();ctx.arc(p.x,p.y,p.r*p.d,0,Math.PI*2);ctx.fillStyle=p.col;ctx.globalAlpha=p.a*p.d;ctx.fill();ctx.globalAlpha=1
+    })
+    for(let i=0;i<particles.length;i++)for(let j=i+1;j<particles.length;j++){
+      const dx=particles[i].x-particles[j].x,dy=particles[i].y-particles[j].y,d=Math.sqrt(dx*dx+dy*dy)
+      if(d<110){ctx.beginPath();ctx.moveTo(particles[i].x,particles[i].y);ctx.lineTo(particles[j].x,particles[j].y);ctx.strokeStyle=`rgba(139,110,255,${.1*(1-d/110)})`;ctx.lineWidth=.5;ctx.stroke()}
+    }
+    shooters.forEach((s,i)=>{
+      ctx.save();const g=ctx.createLinearGradient(s.x,s.y,s.x-s.vx*10,s.y-s.vy*10)
+      g.addColorStop(0,s.col);g.addColorStop(1,'transparent')
+      ctx.strokeStyle=g;ctx.lineWidth=1.5;ctx.globalAlpha=s.a
+      ctx.beginPath();ctx.moveTo(s.x,s.y);ctx.lineTo(s.x-s.vx*12,s.y-s.vy*12);ctx.stroke()
+      ctx.globalAlpha=1;ctx.restore()
+      s.x+=s.vx;s.y+=s.vy;s.a-=.014
+      if(s.a<=0||s.x>W+50){shooters.splice(i,1);setTimeout(spawnShooter,rand(1000,3500))}
+    })
+    for(let i=0;i<3;i++){
+      const ph=(t+i*2.1)%(Math.PI*2),rr=150+i*70+Math.sin(t*.5+i)*25
+      const ra=0.06*Math.sin(ph)
+      if(ra>0){ctx.beginPath();ctx.arc(W*.5+(mouse.x-W*.5)*.015,H*.42+(mouse.y-H*.5)*.015,rr,0,Math.PI*2);ctx.strokeStyle=COLS[i%COLS.length];ctx.lineWidth=1;ctx.globalAlpha=ra;ctx.stroke();ctx.globalAlpha=1}
+    }
+    requestAnimationFrame(draw)
+  }
+  window.addEventListener('resize',rsz);rsz();draw()
+})()
+
+// ===== STORAGE =====
+const SK='vpz4',PK='vpz4_pw',VK='vpz4_v',TK='vpz4_t'
+function getData(){try{return JSON.parse(localStorage.getItem(SK))||{games:[],apps:[],videos:[],music:[],books:[],socials:[],feedback:[]}}catch{return{games:[],apps:[],videos:[],music:[],books:[],socials:[],feedback:[]}}}
+function saveData(d){localStorage.setItem(SK,JSON.stringify(d))}
+function getPw(){return localStorage.getItem(PK)||'vplayzone123'}
+
+// ===== VISIT COUNTER =====
+function trackVisit(){
+  const total=(parseInt(localStorage.getItem(VK))||0)+1;localStorage.setItem(VK,total)
+  const today=new Date().toDateString()
+  const td=JSON.parse(localStorage.getItem(TK)||'{"date":"","count":0}')
+  if(td.date!==today){td.date=today;td.count=0}
+  td.count++;localStorage.setItem(TK,JSON.stringify(td))
+}
+trackVisit()
+
+function updateStats(){
+  const total=parseInt(localStorage.getItem(VK))||0
+  const td=JSON.parse(localStorage.getItem(TK)||'{"date":"","count":0}')
+  const d=getData(),items=d.games.length+d.apps.length+d.books.length+d.socials.length+d.music.length
+  document.getElementById('stat-visits').textContent=total.toLocaleString()
+  document.getElementById('stat-today').textContent=td.count||0
+  document.getElementById('stat-items').textContent=items
+  document.getElementById('hs-visits').textContent=total.toLocaleString()
+  document.getElementById('hs-games').textContent=d.games.length
+  document.getElementById('hs-apps').textContent=d.apps.length
+  document.getElementById('hs-books').textContent=d.books.length
+}
+
+// ===== SEARCH =====
+function doSearch(q){
+  const drop=document.getElementById('search-drop')
+  if(!q||!q.trim()){drop.classList.remove('open');return}
+  const d=getData(),r=[],qt=q.toLowerCase()
+  d.games.forEach(x=>{if(x.title.toLowerCase().includes(qt))r.push({img:x.logoImg||'',icon:'🎮',title:x.title,sub:'Game · '+(x.genre||''),href:'#games'})})
+  d.apps.forEach(x=>{if(x.title.toLowerCase().includes(qt))r.push({img:x.logoImg||'',icon:'📱',title:x.title,sub:'App · '+(x.cat||''),href:'#apps'})})
+  d.books.forEach(x=>{if(x.title.toLowerCase().includes(qt))r.push({img:x.coverImg||'',icon:'📚',title:x.title,sub:(x.type||'Book')+' · '+(x.genre||''),href:'#books'})})
+  d.socials.forEach(x=>{if(x.name.toLowerCase().includes(qt)||( x.handle&&x.handle.toLowerCase().includes(qt)))r.push({img:x.logoImg||'',icon:'🔗',title:x.name,sub:x.handle||x.url,href:'#social'})})
+  d.music.forEach(x=>{if(x.title.toLowerCase().includes(qt))r.push({img:`https://img.youtube.com/vi/${x.vid}/default.jpg`,icon:'🎵',title:x.title,sub:'Song · '+(x.artist||''),href:'#music'})})
+  if(!r.length){drop.innerHTML='<div class="sr-empty">No results found</div>';drop.classList.add('open');return}
+  drop.innerHTML=r.slice(0,7).map(x=>`<a href="${x.href}" class="sr-item" onclick="closeDrop()"><div class="sr-icon">${x.img?`<img src="${esc(x.img)}" onerror="this.style.display='none'">`:''}${x.icon}</div><div class="sr-info"><strong>${esc(x.title)}</strong><span>${esc(x.sub)}</span></div></a>`).join('')
+  drop.classList.add('open')
+}
+function closeDrop(){document.getElementById('search-drop').classList.remove('open')}
+
+// ===== ADMIN =====
+let isAdmin=false,activeTab='game'
+function doLogin(){
+  const v=document.getElementById('login-pw').value
+  if(v===getPw()){
+    isAdmin=true;document.getElementById('login-pw').value=''
+    document.getElementById('login-err').style.display='none'
+    closeOv('ov-login')
+    document.getElementById('admin-bar').classList.add('on')
+    document.getElementById('admin-stats').classList.add('on')
+    document.getElementById('hero-stats').classList.add('on')
+    document.body.classList.add('admin-mode')
+    updateStats();showFbList()
+  } else document.getElementById('login-err').style.display='block'
+}
+function logout(){
+  isAdmin=false
+  document.getElementById('admin-bar').classList.remove('on')
+  document.getElementById('admin-stats').classList.remove('on')
+  document.getElementById('hero-stats').classList.remove('on')
+  document.body.classList.remove('admin-mode')
+  document.getElementById('fb-list').style.display='none'
+}
+function changePw(){
+  const a=document.getElementById('pw1').value,b=document.getElementById('pw2').value
+  if(!a)return
+  if(a!==b){document.getElementById('pw-err').style.display='block';return}
+  document.getElementById('pw-err').style.display='none'
+  localStorage.setItem(PK,a)
+  document.getElementById('pw1').value='';document.getElementById('pw2').value=''
+  closeOv('ov-pw');alert('Password changed!')
+}
+function openOv(id){document.getElementById(id).classList.add('open')}
+function closeOv(id){document.getElementById(id).classList.remove('open')}
+document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open')}))
+function switchTab(n,btn){activeTab=n;document.querySelectorAll('.tab-p').forEach(p=>p.classList.remove('on'));document.querySelectorAll('.mtab').forEach(b=>b.classList.remove('on'));document.getElementById('tab-'+n).classList.add('on');btn.classList.add('on')}
+
+// ===== HELPERS =====
+function ytId(u){if(!u)return'';const m=u.match(/(?:v=|youtu\.be\/|embed\/)([a-zA-Z0-9_-]{11})/);return m?m[1]:u.trim()}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).substr(2,5)}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function readFile(f){return new Promise(res=>{const r=new FileReader();r.onload=e=>res(e.target.result);r.readAsDataURL(f)})}
+const cMap={purple:'rgba(139,110,255,.2)',cyan:'rgba(0,229,255,.15)',red:'rgba(255,61,110,.15)',green:'rgba(10,255,160,.12)',gold:'rgba(255,217,61,.12)'}
+const cText={purple:'var(--glow)',cyan:'var(--glow2)',red:'var(--red)',green:'var(--green)',gold:'var(--gold)'}
+
+// ===== MUSIC =====
+let playing=false
+const audio=document.getElementById('bg-audio')
+audio.volume=0.4
+const savedMu=localStorage.getItem('vpz_mu')
+if(savedMu)audio.src=savedMu
+
+function toggleMusic(){
+  if(!audio.src||audio.src===location.href){
+    if(isAdmin)openOv('ov-music')
+    else alert('No background music yet. Check back soon! 🎵')
+    return
+  }
+  if(playing){audio.pause();playing=false;updateMusicBtn()}
+  else audio.play().then(()=>{playing=true;updateMusicBtn()}).catch(()=>alert('Could not play. Try again.'))
+}
+function updateMusicBtn(){
+  const btn=document.getElementById('nav-music-btn')
+  if(playing){btn.textContent='⏸ Pause';btn.classList.add('playing')}
+  else{btn.textContent='🎵 Music';btn.classList.remove('playing')}
+}
+async function saveMusic(){
+  const urlInput=document.getElementById('music-url-input').value.trim()
+  const titleInput=document.getElementById('music-title-input').value.trim()
+  const fileInput=document.getElementById('music-file-input').files[0]
+  let src=''
+  if(fileInput){src=await readFile(fileInput)}
+  else if(urlInput){src=urlInput}
+  else{alert('Please paste a URL or upload an MP3 file');return}
+  localStorage.setItem('vpz_mu',src)
+  if(titleInput)localStorage.setItem('vpz_mt',titleInput)
+  audio.src=src
+  closeOv('ov-music')
+  document.getElementById('music-url-input').value=''
+  document.getElementById('music-title-input').value=''
+  document.getElementById('music-file-input').value=''
+  audio.play().then(()=>{playing=true;updateMusicBtn()}).catch(()=>alert('Music saved! Press Music button to play.'))
+}
+
+// ===== SAVE ITEM =====
+async function saveItem(){
+  const d=getData()
+  if(activeTab==='game'){
+    const t=document.getElementById('g-title').value.trim();if(!t){alert('Enter a game title');return}
+    const coverF=document.getElementById('g-cover').files[0]
+    const logoF=document.getElementById('g-logo').files[0]
+    const apkF=document.getElementById('g-apk').files[0]
+    const o={id:uid(),title:t,desc:document.getElementById('g-desc').value.trim(),genre:document.getElementById('g-genre').value.trim(),platform:document.getElementById('g-platform').value,coverImg:'',logoImg:'',ss:[document.getElementById('g-ss1').value.trim(),document.getElementById('g-ss2').value.trim(),document.getElementById('g-ss3').value.trim()].filter(Boolean),vid:ytId(document.getElementById('g-vid').value.trim()),playUrl:document.getElementById('g-play').value.trim(),apkUrl:document.getElementById('g-apk-url').value.trim(),apkName:'',apkData:''}
+    const tasks=[]
+    if(coverF)tasks.push(readFile(coverF).then(r=>o.coverImg=r))
+    if(logoF)tasks.push(readFile(logoF).then(r=>o.logoImg=r))
+    if(apkF)tasks.push(readFile(apkF).then(r=>{o.apkName=apkF.name;o.apkData=r}))
+    await Promise.all(tasks)
+    d.games.push(o)
+    ;['g-title','g-desc','g-genre','g-ss1','g-ss2','g-ss3','g-vid','g-play','g-apk-url'].forEach(i=>document.getElementById(i).value='')
+    ;['g-cover','g-logo','g-apk'].forEach(i=>document.getElementById(i).value='')
+  } else if(activeTab==='app'){
+    const t=document.getElementById('a-title').value.trim();if(!t){alert('Enter an app name');return}
+    const coverF=document.getElementById('a-cover').files[0]
+    const logoF=document.getElementById('a-logo').files[0]
+    const apkF=document.getElementById('a-apk').files[0]
+    const o={id:uid(),title:t,desc:document.getElementById('a-desc').value.trim(),cat:document.getElementById('a-cat').value.trim(),platform:document.getElementById('a-platform').value,coverImg:'',logoImg:'',ss:[document.getElementById('a-ss1').value.trim(),document.getElementById('a-ss2').value.trim()].filter(Boolean),apkUrl:document.getElementById('a-apk-url').value.trim(),store:document.getElementById('a-store').value.trim(),web:document.getElementById('a-web').value.trim(),apkName:'',apkData:''}
+    const tasks=[]
+    if(coverF)tasks.push(readFile(coverF).then(r=>o.coverImg=r))
+    if(logoF)tasks.push(readFile(logoF).then(r=>o.logoImg=r))
+    if(apkF)tasks.push(readFile(apkF).then(r=>{o.apkName=apkF.name;o.apkData=r}))
+    await Promise.all(tasks)
+    d.apps.push(o)
+    ;['a-title','a-desc','a-cat','a-ss1','a-ss2','a-apk-url','a-store','a-web'].forEach(i=>document.getElementById(i).value='')
+    ;['a-cover','a-logo','a-apk'].forEach(i=>document.getElementById(i).value='')
+  } else if(activeTab==='video'){
+    const vid=ytId(document.getElementById('v-id').value.trim()),t=document.getElementById('v-title').value.trim()
+    if(!vid||!t){alert('Enter YouTube URL and title');return}
+    d.videos.push({id:uid(),vid,title:t,desc:document.getElementById('v-desc').value.trim(),tag:document.getElementById('v-tag').value.trim()||'Video',year:document.getElementById('v-year').value.trim()||'2024'})
+    ;['v-id','v-title','v-desc','v-tag','v-year'].forEach(i=>document.getElementById(i).value='')
+  } else if(activeTab==='music'){
+    const vid=ytId(document.getElementById('m-id').value.trim()),t=document.getElementById('m-title').value.trim()
+    if(!vid||!t){alert('Enter YouTube URL and song title');return}
+    d.music.push({id:uid(),vid,title:t,artist:document.getElementById('m-artist').value.trim()||'Unknown',year:document.getElementById('m-year').value.trim()||'2024'})
+    ;['m-id','m-title','m-artist','m-year'].forEach(i=>document.getElementById(i).value='')
+  } else if(activeTab==='book'){
+    const t=document.getElementById('b-title').value.trim();if(!t){alert('Enter a book title');return}
+    const coverF=document.getElementById('b-cover').files[0]
+    const o={id:uid(),title:t,desc:document.getElementById('b-desc').value.trim(),type:document.getElementById('b-type').value,genre:document.getElementById('b-genre').value.trim(),icon:document.getElementById('b-icon').value.trim()||'📖',dl:document.getElementById('b-dl').value.trim(),read:document.getElementById('b-read').value.trim(),coverImg:''}
+    if(coverF)o.coverImg=await readFile(coverF)
+    d.books.push(o)
+    ;['b-title','b-desc','b-genre','b-icon','b-dl','b-read'].forEach(i=>document.getElementById(i).value='')
+    document.getElementById('b-cover').value=''
+  } else if(activeTab==='social'){
+    const n=document.getElementById('s-name').value.trim(),u=document.getElementById('s-url').value.trim()
+    if(!n||!u){alert('Enter platform name and URL');return}
+    const bannerF=document.getElementById('s-banner').files[0]
+    const logoF=document.getElementById('s-logo').files[0]
+    const o={id:uid(),name:n,url:u,handle:document.getElementById('s-handle').value.trim(),desc:document.getElementById('s-desc').value.trim(),subs:document.getElementById('s-subs').value.trim(),color:document.getElementById('s-color').value,bannerImg:'',logoImg:''}
+    const tasks=[]
+    if(bannerF)tasks.push(readFile(bannerF).then(r=>o.bannerImg=r))
+    if(logoF)tasks.push(readFile(logoF).then(r=>o.logoImg=r))
+    await Promise.all(tasks)
+    d.socials.push(o)
+    ;['s-name','s-url','s-handle','s-desc','s-subs'].forEach(i=>document.getElementById(i).value='')
+    ;['s-banner','s-logo'].forEach(i=>document.getElementById(i).value='')
+  }
+  saveData(d);render();updateStats();closeOv('ov-add')
+}
+
+function del(type,id){if(!confirm('Delete this item?'))return;const d=getData();d[type]=d[type].filter(x=>x.id!==id);saveData(d);render();updateStats()}
+
+// ===== FEEDBACK =====
+function submitFeedback(){
+  const msg=document.getElementById('fb-msg').value.trim();if(!msg){alert('Write a message first');return}
+  const name=document.getElementById('fb-name').value.trim()||'Anonymous'
+  const type=document.getElementById('fb-type').value
+  const d=getData();d.feedback.push({id:uid(),name,type,msg,date:new Date().toLocaleDateString()});saveData(d)
+  const sub=encodeURIComponent('Vplayzone Feedback — '+type)
+  const body=encodeURIComponent('From: '+name+'\nType: '+type+'\n\n'+msg)
+  window.open('mailto:vplayzoneyt@gmail.com?subject='+sub+'&body='+body)
+  document.getElementById('fb-form').style.display='none'
+  document.getElementById('fb-success').style.display='block'
+}
+function showFbList(){
+  if(!isAdmin)return
+  const d=getData(),el=document.getElementById('fb-list')
+  if(!d.feedback.length){el.style.display='none';return}
+  el.style.display='block'
+  el.innerHTML=`<h3 style="font-family:'Orbitron',sans-serif;font-size:.8rem;margin-bottom:.9rem;color:var(--gold)">📬 Feedback (${d.feedback.length})</h3>`+
+    d.feedback.map(f=>`<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:.9rem;margin-bottom:8px;position:relative">
+      <button class="del-x" style="display:inline-block" onclick="delFb('${f.id}')">✕</button>
+      <div style="font-size:.68rem;color:var(--gold);margin-bottom:4px">${esc(f.type)} · ${esc(f.name)} · ${esc(f.date)}</div>
+      <div style="font-size:.82rem;line-height:1.6">${esc(f.msg)}</div>
+    </div>`).join('')
+}
+function delFb(id){if(!confirm('Delete?'))return;const d=getData();d.feedback=d.feedback.filter(x=>x.id!==id);saveData(d);showFbList()}
+
+// ===== RENDER =====
+function render(){
+  const d=getData()
+
+  // GAMES
+  document.getElementById('g-count').textContent=d.games.length
+  const gl=document.getElementById('g-list')
+  if(!d.games.length){gl.innerHTML='<div class="empty"><div class="big">🎮</div><p class="coming-txt" style="color:var(--glow)">COMING SOON</p><small>Games on their way!</small></div>'}
+  else gl.innerHTML=d.games.map(g=>`
+    <div class="item-wrap">
+      <button class="del-x" onclick="del('games','${g.id}')">✕</button>
+      <div class="game-card">
+        ${g.coverImg?`<div class="game-cover"><img src="${g.coverImg}"><div class="game-cover-gradient"></div></div>`:`<div class="game-cover"><span style="font-size:3rem">🎮</span></div>`}
+        <div class="game-body">
+          <div class="game-top">
+            <div class="game-logo">${g.logoImg?`<img src="${g.logoImg}">`:'🎮'}</div>
+            <div><div class="game-name">${esc(g.title)}</div><div class="game-genre">${esc(g.genre||'Game')} · ${esc(g.platform||'')}</div></div>
+          </div>
+          ${g.desc?`<div class="game-desc">${esc(g.desc)}</div>`:''}
+          ${g.vid?`<div class="game-trailer"><img src="https://img.youtube.com/vi/${g.vid}/hqdefault.jpg" onerror="this.src=''"><a href="https://www.youtube.com/watch?v=${g.vid}" target="_blank" class="game-trailer-play"><span>▶</span></a></div>`:''}
+          ${g.ss&&g.ss.length?`<div class="game-shots">${g.ss.map(s=>`<img src="${esc(s)}" onerror="this.style.display='none'">`).join('')}</div>`:''}
+          <div class="game-btns">
+            ${g.playUrl?`<a href="${esc(g.playUrl)}" target="_blank" class="btn-purple">▶ Play Online</a>`:''}
+            ${g.apkData?`<a href="${g.apkData}" download="${esc(g.apkName||g.title+'.apk')}" class="btn-green">⬇ APK</a>`:''}
+            ${g.apkUrl&&!g.apkData?`<a href="${esc(g.apkUrl)}" target="_blank" class="btn-green">⬇ APK</a>`:''}
+          </div>
+        </div>
+      </div>
+    </div>`).join('')
+
+  // APPS
+  document.getElementById('a-count').textContent=d.apps.length
+  const al=document.getElementById('a-list')
+  if(!d.apps.length){al.innerHTML='<div class="empty"><div class="big">📱</div><p class="coming-txt" style="color:var(--glow2)">COMING SOON</p><small>Apps being prepared!</small></div>'}
+  else al.innerHTML=d.apps.map(a=>`
+    <div class="item-wrap">
+      <button class="del-x" onclick="del('apps','${a.id}')">✕</button>
+      <div class="app-card">
+        ${a.coverImg?`<div class="app-banner"><img src="${a.coverImg}"><div class="app-banner-gradient"></div></div>`:`<div class="app-banner"><span>📱</span></div>`}
+        <div class="app-body">
+          <div class="app-top">
+            <div class="app-logo">${a.logoImg?`<img src="${a.logoImg}">`:'📱'}</div>
+            <div><div class="app-name">${esc(a.title)}</div><div class="app-cat">${esc(a.cat||'App')} · ${esc(a.platform||'')}</div></div>
+          </div>
+          ${a.desc?`<div class="app-desc">${esc(a.desc)}</div>`:''}
+          ${a.ss&&a.ss.length?`<div class="app-shots">${a.ss.map(s=>`<img src="${esc(s)}" onerror="this.style.display='none'">`).join('')}</div>`:''}
+          <div class="app-btns">
+            ${a.apkData?`<a href="${a.apkData}" download="${esc(a.apkName||a.title+'.apk')}" class="btn-green">⬇ APK</a>`:''}
+            ${a.apkUrl&&!a.apkData?`<a href="${esc(a.apkUrl)}" target="_blank" class="btn-green">⬇ APK</a>`:''}
+            ${a.store?`<a href="${esc(a.store)}" target="_blank" class="btn-cyan">🏪 Store</a>`:''}
+            ${a.web?`<a href="${esc(a.web)}" target="_blank" class="btn-outline">🌐 Website</a>`:''}
+          </div>
+        </div>
+      </div>
+    </div>`).join('')
+
+  // SOCIALS
+  document.getElementById('s-count').textContent=d.socials.length
+  const sl=document.getElementById('s-list')
+  if(!d.socials.length){sl.innerHTML='<div class="empty"><div class="big">🔗</div><p class="coming-txt" style="color:var(--red)">COMING SOON</p><small>Links dropping soon!</small></div>'}
+  else sl.innerHTML=d.socials.map(s=>`
+    <div class="item-wrap">
+      <button class="del-x" onclick="del('socials','${s.id}')">✕</button>
+      <a href="${esc(s.url)}" target="_blank" class="social-card">
+        <div class="social-banner" style="background:${cMap[s.color]||cMap.purple}">
+          ${s.bannerImg?`<img src="${s.bannerImg}"><div class="social-banner-gradient"></div>`:s.name}
+        </div>
+        <div class="social-body">
+          <div class="social-logo" style="border-color:${cText[s.color]||cText.purple}">${s.logoImg?`<img src="${s.logoImg}">`:'🔗'}</div>
+          <div class="social-info">
+            <div class="social-name">${esc(s.name)}</div>
+            ${s.handle?`<div class="social-handle">${esc(s.handle)}</div>`:''}
+            ${s.subs?`<div class="social-subs">${esc(s.subs)}</div>`:''}
+            ${s.desc?`<div class="social-desc">${esc(s.desc)}</div>`:''}
+          </div>
+          <span class="social-arrow">→</span>
+        </div>
+      </a>
+    </div>`).join('')
+
+  // BOOKS
+  document.getElementById('b-count').textContent=d.books.length
+  const bl=document.getElementById('b-list')
+  if(!d.books.length){bl.innerHTML='<div class="empty"><div class="big">📚</div><p class="coming-txt" style="color:var(--green)">COMING SOON</p><small>Books on the way!</small></div>'}
+  else bl.innerHTML=d.books.map(b=>`
+    <div class="item-wrap">
+      <button class="del-x" onclick="del('books','${b.id}')">✕</button>
+      <div class="book-card">
+        <div class="book-cover-wrap">
+          <div class="book-cover">${b.coverImg?`<img src="${b.coverImg}">`:b.icon}</div>
+        </div>
+        <div class="book-info">
+          <div class="book-type">${esc(b.type||'Book')} · ${esc(b.genre||'')}</div>
+          <div class="book-name">${esc(b.title)}</div>
+          ${b.desc?`<div class="book-desc">${esc(b.desc)}</div>`:''}
+          <div class="book-btns">
+            ${b.dl?`<a href="${esc(b.dl)}" target="_blank" class="btn-green">⬇ Download</a>`:''}
+            ${b.read?`<a href="${esc(b.read)}" target="_blank" class="btn-outline">🌐 Read</a>`:''}
+          </div>
+        </div>
+      </div>
+    </div>`).join('')
+
+  // MUSIC
+  document.getElementById('m-count').textContent=d.music.length
+  const ml=document.getElementById('m-list')
+  if(!d.music.length){ml.innerHTML='<div class="empty"><div class="big">🎵</div><p class="coming-txt" style="color:var(--red)">COMING SOON</p><small>Songs dropping soon!</small></div>'}
+  else ml.innerHTML=d.music.map((m,i)=>`
+    <div class="item-wrap">
+      <button class="del-x" onclick="del('music','${m.id}')">✕</button>
+      <a href="https://www.youtube.com/watch?v=${m.vid}" target="_blank" class="music-item">
+        <span class="music-num">${i+1}</span>
+        <div class="music-thumb"><img src="https://img.youtube.com/vi/${m.vid}/default.jpg" onerror="this.parentNode.innerHTML='🎵'"></div>
+        <div class="music-info"><strong>${esc(m.title)}</strong><span>${esc(m.artist)} · ${esc(m.year)}</span></div>
+        <div class="music-play"><svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg></div>
+      </a>
+    </div>`).join('')
+}
+
+render()
+</script>
+</body>
+</html>
